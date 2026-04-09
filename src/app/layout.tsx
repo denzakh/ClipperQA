@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ClipperQA } from "@/components/clipper-qa/ClipperQA";
 import { Navbar } from "@/components/ui/Navbar";
 import "./globals.css";
 
@@ -40,6 +41,7 @@ const RootLayout = ({
       <body className="flex min-h-full flex-col font-sans">
         <Navbar brand="ClipperQA" links={[...navLinks]} />
         <div className="flex flex-1 flex-col">{children}</div>
+        <ClipperQA />
       </body>
     </html>
   );
