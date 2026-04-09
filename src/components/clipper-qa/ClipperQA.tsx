@@ -8,6 +8,7 @@ import {
   ScanSearch,
   Send,
   Trash2,
+  X,
 } from "lucide-react";
 
 const STORAGE_EXPANDED = "clipper-qa-expanded";
@@ -240,6 +241,10 @@ export const ClipperQA = () => {
 
   const clearBatch = () => setBugs([]);
 
+  const removeBug = (id: string) => {
+    setBugs((prev) => prev.filter((b) => b.id !== id));
+  };
+
   const sendToAi = () => {
     const payload = bugs.map(
       ({ id, file, component, classes, description, breakpoint }) => ({
@@ -259,7 +264,7 @@ export const ClipperQA = () => {
       <div
         ref={rootRef}
         data-clipper-qa-root
-        className="fixed bottom-5 right-5 z-[2147483646] flex flex-col items-end gap-2 font-sans"
+        className="fixed bottom-5 right-5 z-[2147483646] font-sans"
       >
         <button
           type="button"
@@ -269,9 +274,6 @@ export const ClipperQA = () => {
         >
           <Bug className="h-6 w-6" strokeWidth={2} />
         </button>
-        <span className="rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 shadow-sm">
-          QA
-        </span>
       </div>
     );
   }
@@ -340,20 +342,30 @@ export const ClipperQA = () => {
             <ul className="divide-y divide-zinc-200">
               {bugs.map((b) => (
                 <li key={b.id} className="p-3">
-                  <div className="mb-2 space-y-0.5 text-[11px]">
-                    <p className="font-medium text-indigo-800">
-                      {b.component || "(no data-qa-component)"}
-                    </p>
-                    <p className="truncate text-zinc-500" title={b.file}>
-                      {b.file || "(no data-qa-file)"}
-                    </p>
-                    <p className="text-zinc-600">{b.breakpoint}</p>
-                    <p
-                      className="max-h-12 overflow-y-auto break-all font-mono text-[10px] text-zinc-500"
-                      title={b.classes}
+                  <div className="mb-2 flex items-start gap-2">
+                    <div className="min-w-0 flex-1 space-y-0.5 text-[11px]">
+                      <p className="font-medium text-indigo-800">
+                        {b.component || "(no data-qa-component)"}
+                      </p>
+                      <p className="truncate text-zinc-500" title={b.file}>
+                        {b.file || "(no data-qa-file)"}
+                      </p>
+                      <p className="text-zinc-600">{b.breakpoint}</p>
+                      <p
+                        className="max-h-12 overflow-y-auto break-all font-mono text-[10px] text-zinc-500"
+                        title={b.classes}
+                      >
+                        {b.classes || "—"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeBug(b.id)}
+                      className="shrink-0 rounded-md p-1 text-zinc-400 transition hover:bg-red-50 hover:text-red-600"
+                      aria-label="Remove clip"
                     >
-                      {b.classes || "—"}
-                    </p>
+                      <X className="h-4 w-4" strokeWidth={2} />
+                    </button>
                   </div>
                   <label className="sr-only" htmlFor={`desc-${b.id}`}>
                     Description
