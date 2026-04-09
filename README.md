@@ -1,4 +1,15 @@
-# ClipperQA 
+# ClipperQA
+
+Интеллектуальный "клипер" для React-приложений, который позволяет тестировщикам собирать серию багов с полным техническим контекстом для ИИ-разработки.
+
+![ClipperQA Preview](./preview.jpg)
+
+### Основные возможности:
+- **Component Inspection:** Автоматическое определение пути к файлу (`data-qa-file`).
+- **Context Capture:** Захват пропсов из React Fiber и Tailwind-классов.
+- **Batching:** Сбор серии багов в LocalStorage для единой отправки в Replit/GitLab.
+- **Responsive Aware:** Фиксация активного брейкпоинта (Mobile/Desktop).
+
 
 Ручное тестирование  с отправкой данных в ИИ
 
