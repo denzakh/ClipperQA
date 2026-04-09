@@ -72,6 +72,7 @@ const captureContextFromElement = (el: Element) => {
 export const ClipperQA = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverRef = useRef<Element | null>(null);
+  const inspectModeRef = useRef(false);
   const [expanded, setExpanded] = useState(true);
   const [inspectMode, setInspectMode] = useState(false);
   const [bugs, setBugs] = useState<ClippedBug[]>([]);
@@ -101,6 +102,8 @@ export const ClipperQA = () => {
     };
     setBugs((prev) => [...prev, next]);
   }, []);
+
+  inspectModeRef.current = inspectMode;
 
   useEffect(() => {
     try {
@@ -142,12 +145,18 @@ export const ClipperQA = () => {
   }, [bugs, storageReady]);
 
   useEffect(() => {
-    if (!inspectMode) {
-      clearHoverOutline();
-      return;
-    }
-
     const onMove = (e: MouseEvent) => {
+      const highlight = inspectModeRef.current || e.altKey;
+      if (!highlight) {
+        const prev = hoverRef.current;
+        if (prev && (prev instanceof HTMLElement || prev instanceof SVGElement)) {
+          prev.style.outline = "";
+          prev.style.outlineOffset = "";
+        }
+        hoverRef.current = null;
+        return;
+      }
+
       const root = rootRef.current;
       const hit = elementFromPointExcludingWidget(e.clientX, e.clientY, root);
       const prev = hoverRef.current;
@@ -158,10 +167,8 @@ export const ClipperQA = () => {
         }
       }
       if (hit && (hit instanceof HTMLElement || hit instanceof SVGElement)) {
-        if (hoverRef.current !== hit) {
-          hit.style.outline = OUTLINE;
-          hit.style.outlineOffset = OUTLINE_OFFSET;
-        }
+        hit.style.outline = OUTLINE;
+        hit.style.outlineOffset = OUTLINE_OFFSET;
         hoverRef.current = hit;
       } else {
         hoverRef.current = null;
@@ -170,14 +177,30 @@ export const ClipperQA = () => {
 
     const onScroll = () => clearHoverOutline();
 
+    const clearIfAltOnly = () => {
+      if (!inspectModeRef.current) clearHoverOutline();
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "AltLeft" || e.code === "AltRight" || e.key === "Alt") {
+        clearIfAltOnly();
+      }
+    };
+
+    const onBlur = () => clearIfAltOnly();
+
     window.addEventListener("mousemove", onMove, true);
     window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    window.addEventListener("blur", onBlur);
     return () => {
       window.removeEventListener("mousemove", onMove, true);
       window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+      window.removeEventListener("blur", onBlur);
       clearHoverOutline();
     };
-  }, [inspectMode, clearHoverOutline]);
+  }, [clearHoverOutline]);
 
   useEffect(() => {
     const shouldIntercept = (e: MouseEvent) => {
@@ -241,12 +264,12 @@ export const ClipperQA = () => {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow-lg shadow-indigo-900/40 ring-2 ring-indigo-400/30 transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow-lg shadow-indigo-600/25 ring-2 ring-white transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
           aria-label="Open ClipperQA"
         >
           <Bug className="h-6 w-6" strokeWidth={2} />
         </button>
-        <span className="rounded-md bg-slate-900/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-200">
+        <span className="rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 shadow-sm">
           QA
         </span>
       </div>
@@ -257,19 +280,19 @@ export const ClipperQA = () => {
     <div
       ref={rootRef}
       data-clipper-qa-root
-      className="fixed bottom-5 right-5 z-[2147483646] flex w-[min(100vw-1.5rem,22rem)] max-h-[min(85vh,36rem)] flex-col overflow-hidden rounded-xl border border-slate-700/80 bg-slate-900 text-slate-100 shadow-2xl shadow-black/50 ring-1 ring-indigo-500/20 font-sans"
+      className="fixed bottom-5 right-5 z-[2147483646] flex w-[min(100vw-1.5rem,22rem)] max-h-[min(85vh,36rem)] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white text-zinc-900 shadow-xl shadow-zinc-400/25 ring-1 ring-zinc-200/80 font-sans"
     >
-      <header className="flex items-center justify-between gap-2 border-b border-slate-700/80 bg-slate-950/80 px-3 py-2.5">
+      <header className="flex items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50 px-3 py-2.5">
         <div className="flex items-center gap-2 min-w-0">
-          <ClipboardList className="h-4 w-4 shrink-0 text-indigo-400" />
-          <span className="truncate text-sm font-semibold text-slate-100">
+          <ClipboardList className="h-4 w-4 shrink-0 text-indigo-600" />
+          <span className="truncate text-sm font-semibold text-zinc-900">
             ClipperQA
           </span>
         </div>
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:bg-slate-700"
+          className="inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-50"
         >
           <ChevronDown className="h-3.5 w-3.5" />
           Collapse
@@ -285,7 +308,7 @@ export const ClipperQA = () => {
             className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition min-w-[7rem] ${
               inspectMode
                 ? "bg-indigo-600 text-white hover:bg-indigo-500"
-                : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                : "border border-zinc-200 bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
             }`}
           >
             <ScanSearch className="h-3.5 w-3.5" />
@@ -294,38 +317,39 @@ export const ClipperQA = () => {
           <button
             type="button"
             onClick={clearBatch}
-            className="inline-flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-2.5 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700"
+            className="inline-flex items-center justify-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Clear Batch
           </button>
         </div>
 
-        <p className="text-[11px] leading-snug text-slate-500">
-          Hover highlights in inspect mode. Click to clip.{" "}
-          <span className="text-indigo-400">Alt+click</span> clips anytime
+        <p className="text-[11px] leading-snug text-zinc-600">
+          Hold <span className="font-medium text-indigo-700">Alt</span> to
+          highlight on hover, or use Inspect for the same without Alt.{" "}
+          <span className="text-indigo-700">Alt+click</span> clips anytime
           (outside this panel).
         </p>
 
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-slate-700/60 bg-slate-950/50">
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50">
           {bugs.length === 0 ? (
-            <p className="p-4 text-center text-xs text-slate-500">
+            <p className="p-4 text-center text-xs text-zinc-500">
               No clips yet. Turn on Inspect or Alt+click an element.
             </p>
           ) : (
-            <ul className="divide-y divide-slate-700/60">
+            <ul className="divide-y divide-zinc-200">
               {bugs.map((b) => (
                 <li key={b.id} className="p-3">
                   <div className="mb-2 space-y-0.5 text-[11px]">
-                    <p className="font-medium text-indigo-300">
+                    <p className="font-medium text-indigo-800">
                       {b.component || "(no data-qa-component)"}
                     </p>
-                    <p className="truncate text-slate-500" title={b.file}>
+                    <p className="truncate text-zinc-500" title={b.file}>
                       {b.file || "(no data-qa-file)"}
                     </p>
-                    <p className="text-slate-500">{b.breakpoint}</p>
+                    <p className="text-zinc-600">{b.breakpoint}</p>
                     <p
-                      className="max-h-12 overflow-y-auto break-all font-mono text-[10px] text-slate-600"
+                      className="max-h-12 overflow-y-auto break-all font-mono text-[10px] text-zinc-500"
                       title={b.classes}
                     >
                       {b.classes || "—"}
@@ -340,7 +364,7 @@ export const ClipperQA = () => {
                     onChange={(e) => updateDescription(b.id, e.target.value)}
                     placeholder="Bug description…"
                     rows={2}
-                    className="w-full resize-none rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full resize-none rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </li>
               ))}
@@ -351,7 +375,7 @@ export const ClipperQA = () => {
         <button
           type="button"
           onClick={sendToAi}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50"
           disabled={bugs.length === 0}
         >
           <Send className="h-4 w-4" />
