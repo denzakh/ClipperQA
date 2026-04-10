@@ -22,8 +22,8 @@ const navLinks = [
 
 export const metadata: Metadata = {
   title: {
-    default: "ClipperQA",
-    template: "%s · ClipperQA",
+    default: "Test site for ClipperQA",
+    template: "%s · site for ClipperQA",
   },
   description: "Modern web experience built with Next.js",
 };
@@ -39,7 +39,7 @@ const RootLayout = ({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <Navbar brand="ClipperQA" links={[...navLinks]} />
+        <Navbar brand="SiteName" links={[...navLinks]} />
         <div className="flex flex-1 flex-col">{children}</div>
         <ClipperQA />
       </body>
