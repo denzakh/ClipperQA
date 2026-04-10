@@ -1,15 +1,23 @@
-# ClipperQA (Babel + widget)
+# ClipperQA (`plugins/clipper-qa`)
 
-Self-contained dev-only tooling: a Babel plugin injects `data-qa-*` attributes and mounts `<ClipperQA />` at the app entry. The React widget lives in `ClipperQA.tsx` next to the plugin.
+Набор для dev-only: Babel-трансформер помечает JSX и при необходимости вставляет виджет; сам виджет — React-компонент.
 
-## Files
+## Состав папки
 
-| Path | Role |
-|------|------|
-| `plugins/clipper-qa/index.js` | Babel plugin (attributes + entry injection) |
-| `plugins/clipper-qa/ClipperQA.tsx` | Floating QA widget (`"use client"`) |
+| Файл | Назначение |
+|------|------------|
+| **`index.js`** | Точка входа для конфигурации Babel: только `module.exports` реализации. Подключайте в `.babelrc` / Vite именно его — путь стабильный и короткий. |
+| **`babel-plugin-clipper-qa.js`** | Реализация плагина: в `development` добавляет `data-qa-component` / `data-qa-file` на JSX (кроме `ClipperQA.tsx` в этой папке); для entry-файлов (`src/app/layout.tsx`, `app/layout.tsx`, `src/App.tsx`) при отсутствии уже импортированного/используемого `<ClipperQA>` вставляет импорт и виджет в конец `<body>` или корня. |
+| **`ClipperQA.tsx`** | Клиентский виджет (`"use client"`): панель QA, инспектор, LocalStorage и т.д. |
+| **`README.MD`** | Эта документация. |
 
-## Next.js — `.babelrc`
+## Поведение плагина
+
+- **Чистота репозитория:** в исходниках нет лишних `data-qa-*`; они появляются только в dev-сборке.
+- **Production:** при `NODE_ENV !== "development"` плагин ничего не меняет.
+- **Уже есть `<ClipperQA />` в layout** (например через `@/components/clipper-qa/ClipperQA`): повторная инъекция не выполняется — проверяется наличие JSX с именем `ClipperQA`.
+
+## Next.js — `.babelrc` в корне проекта
 
 ```json
 {
@@ -18,29 +26,15 @@ Self-contained dev-only tooling: a Babel plugin injects `data-qa-*` attributes a
 }
 ```
 
-The plugin runs only when `process.env.NODE_ENV === "development"`. Production `next build` does not add imports, JSX, or `data-qa-*` attributes.
-
-Injection uses `Program.enter` so it runs **before** `next/babel` rewrites `export default` in the same traversal (root `plugins` run before preset-expanded plugins).
+Альтернатива — ссылаться напрямую на файл реализации: `"./plugins/clipper-qa/babel-plugin-clipper-qa.js"` (эквивалентно `index.js`).
 
 ### Next.js 16 + `next dev` (Turbopack)
 
-По умолчанию `next dev` использует **Turbopack**, который **не применяет** ваш `.babelrc` так же, как классический Webpack. В итоге атрибуты из плагина могут вести себя непредсказуемо, а **инъекция `<ClipperQA />` в `layout.tsx` часто не выполняется**.
+По умолчанию Turbopack может не применять `.babelrc` так же, как Webpack. Для предсказуемой работы плагина используйте `next dev --webpack` или явно подключите `<ClipperQA />` в `layout.tsx` (как в этом репозитории).
 
-**Решение:** запускать dev-сервер с Webpack:
+## Vite — `vite.config.ts`
 
-```json
-"scripts": {
-  "dev": "next dev --webpack"
-}
-```
-
-Альтернатива: явно подключить `<ClipperQA />` в `layout.tsx` (только для разработки, если не хотите `--webpack`).
-
-## Vite — `vite.config.ts` (example)
-
-Install: `npm i -D vite @vitejs/plugin-react`
-
-```ts
+```typescript
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
@@ -56,32 +50,28 @@ export default defineConfig({
 });
 ```
 
-Use `path.resolve` so the plugin resolves the same way on Windows and Unix. For a Vite app whose entry is `src/App.tsx`, the plugin injects there automatically.
+Используйте `path.resolve`, чтобы путь одинаково резолвился на Windows и Unix.
 
-## Entry files recognized
-
-- `src/app/layout.tsx` / `.jsx` (Next.js App Router)
-- `app/layout.tsx` / `.jsx` (without `src/`)
-- `src/App.tsx` / `.jsx` (typical Vite/CRA-style root)
-
-Injection adds:
-
-1. `import { ClipperQA } from '<relative>/plugins/clipper-qa/ClipperQA'` (extension omitted; path is relative to the entry file).
-2. `<ClipperQA />` as the last child inside `<body>` when the root JSX is `<html>…</html>`, otherwise as the last child of the returned root element or fragment.
-
-If you already import or render `ClipperQA`, the plugin skips injection.
-
-## How to verify (auto widget, no manual import)
-
-1. Remove any manual `import { ClipperQA }` and `<ClipperQA />` from `layout.tsx` / `App.tsx`.
-2. Run `npm run dev` and open the app: the widget should appear (bottom-right).
-3. Inspect DOM: elements should include `data-qa-file` and `data-qa-component` in development.
-4. Run `npm run build && npm start` (production): the widget and `data-qa-*` attributes must **not** appear in compiled output for app components.
-
-Optional quick Babel check from the repo root (Next may lower `import` to `require`; look for the path or `_jsx` usage):
+## Зависимости для отдельной проверки Babel
 
 ```bash
-NODE_ENV=development node -e "const p=require('path');const b=require('@babel/core');const r=b.transformFileSync('src/app/layout.tsx',{configFile:'.babelrc',filename:p.resolve('src/app/layout.tsx')});console.log('clipper module',/clipper-qa\\/ClipperQA/.test(r.code));console.log('jsx',/_jsx\\([^,]+\\.ClipperQA/.test(r.code)||r.code.includes('<ClipperQA'));"
+npm install --save-dev @babel/core
 ```
 
-(Use Git Bash or WSL on Windows for `NODE_ENV=development` one-liner, or set the variable in PowerShell first.)
+(`path` — встроенный модуль Node.)
+
+## Результат трансформации (фрагмент DOM в dev)
+
+```html
+<div
+  class="p-4 shadow"
+  data-qa-component="Card"
+  data-qa-file="src/components/Card.tsx"
+>
+  …
+</div>
+```
+
+## Интеграция приложения
+
+Импорт виджета в приложении обычно идёт через обёртку в `src/components/clipper-qa/ClipperQA.tsx`, реэкспортирующую `plugins/clipper-qa/ClipperQA.tsx` — так проще держать алиасы Next.js и единое место подключения в `layout.tsx`.
