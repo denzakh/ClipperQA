@@ -458,50 +458,54 @@ export const ClipperQA = () => {
             ClipperQA
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setExpanded(false)}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-50"
-        >
-          <ChevronDown className="h-3.5 w-3.5" />
-          Collapse
-        </button>
-      </header>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-hidden p-3">
+        {!!bugs.length && (<button
+          title="Clear all clips"
+            type="button"
+            onClick={clearBatch}
+            className="inline-flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-200 sm:flex-initial"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Clear all
+          </button>)}
+
         <div className="flex flex-wrap items-stretch gap-2">
           <button
+            title="Inspect mode"
             type="button"
             onClick={() => setInspectMode((v) => !v)}
             aria-pressed={inspectMode}
-            className={`inline-flex min-w-[7rem] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition ${
+            className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition ${
               inspectMode
                 ? "bg-indigo-600 text-white hover:bg-indigo-500"
                 : "border border-zinc-200 bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
             }`}
           >
             <ScanSearch className="h-3.5 w-3.5" />
-            Toggle Inspect
-          </button>
+            </button>
+
           <button
-            type="button"
-            onClick={clearBatch}
-            className="inline-flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-200 sm:flex-initial"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Clear Batch
+            title="Collapse"
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="min-w-9 justify-center inline-flex cursor-pointer items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-50"
+            >
+              —
           </button>
         </div>
+      </header>
 
-        <p className="text-[11px] leading-snug text-zinc-600">
-          Hold <span className="font-medium text-indigo-700">Alt</span> to
-          highlight on hover, or use Inspect for the same without Alt.{" "}
-          <span className="text-indigo-700">Alt+click</span> clips anytime
-          (outside this panel). With Inspect or{" "}
-          <span className="font-medium text-indigo-700">Alt</span> held, cursor
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden p-3">
+        {!bugs.length && (
+          <p className="text-[11px] leading-snug text-zinc-600">
+            Hold <span className="font-medium text-indigo-700">Alt</span> to
+            highlight on hover, or use Inspect for the same without Alt.{" "}
+            <span className="text-indigo-700">Alt+click</span> clips anytime
+            (outside this panel). With Inspect or{" "}
+            <span className="font-medium text-indigo-700">Alt</span> held, cursor
           becomes copy over elements that expose{" "}
           <span className="font-mono">data-qa-file</span>.
-        </p>
+        </p>)}
 
         <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50">
           {bugs.length === 0 ? (

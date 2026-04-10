@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClipperQA } from "@/components/clipper-qa/ClipperQA";
+import { ClipperQA } from "@/../plugins/clipper-qa/ClipperQA";
 import { Navbar } from "@/components/ui/Navbar";
 import "./globals.css";
 
