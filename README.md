@@ -105,3 +105,89 @@ AI Trigger: GitLab Webhook активирует ИИ-агента.
 Fixing: ИИ за один проход правит все файлы в feature-ветке. Особенно удобно это с Tailwind.
 
 Re-deploy: GitLab CI обновляет контейнер в облаке.
+
+## Подключение виджета в другой проект
+
+Виджет и Babel-плагин лежат в каталоге [`plugins/clipper-qa`](./plugins/clipper-qa/). Подробности по поведению плагина и примерам конфигов — в [`plugins/clipper-qa/README.md`](./plugins/clipper-qa/README.md).
+
+### Что скопировать
+
+Скопируйте в целевой репозиторий всю папку `plugins/clipper-qa` (как минимум файлы `index.js`, `babel-plugin-clipper-qa.js`, `ClipperQA.tsx`). Путь к плагину в конфиге Babel/Vite должен совпадать с фактическим расположением (например `./plugins/clipper-qa/index.js` из корня проекта).
+
+### Зависимости npm
+
+| Пакет | Назначение |
+|--------|-------------|
+| **`react`**, **`react-dom`** | Виджет — клиентский React-компонент (`ClipperQA.tsx`). |
+| **`lucide-react`** | Иконки в панели виджета. |
+| **`@babel/core`** | Нужен для сборки с кастомным Babel (например отдельный скрипт или явная настройка); в Next.js обычно уже тянется транзитивно через `next`. |
+
+Дополнительно по стеку:
+
+- **Next.js** — в `devDependencies` достаточно `next`; в корне проекта добавьте [`.babelrc`](./.babelrc) с пресетом `next/babel` и плагином `./plugins/clipper-qa/index.js` (см. ниже).
+- **Vite + React** — `@vitejs/plugin-react` и подключение того же `index.js` в `babel.plugins` у `react()` (пример в плагиновом README).
+
+Установка минимального набора для «голого» React-проекта с Babel:
+
+```bash
+npm install react react-dom lucide-react
+npm install --save-dev @babel/core
+```
+
+(Для Next/Vite добавьте к этому свои зависимости сборщика.)
+
+### Вариант A: автоматическая разметка и вставка виджета (Babel)
+
+В **development** плагин добавляет на JSX атрибуты `data-qa-file` / `data-qa-component` и может сам вставить `<ClipperQA />` в распознаваемые entry-файлы (`src/app/layout.tsx`, `app/layout.tsx`, `src/App.tsx`). В **production** (`NODE_ENV !== "development"`) код не меняется.
+
+**Next.js** — `.babelrc` в корне целевого проекта:
+
+```json
+{
+  "presets": ["next/babel"],
+  "plugins": ["./plugins/clipper-qa/index.js"]
+}
+```
+
+**Next.js 16 + `next dev` (Turbopack):** Turbopack может вести себя иначе, чем Webpack, по отношению к `.babelrc`. Надёжные варианты: запуск `next dev --webpack` или ручное подключение `<ClipperQA />` в корневом layout (вариант B).
+
+**Vite** — фрагмент `vite.config.ts` (полный пример — в [`plugins/clipper-qa/README.md`](./plugins/clipper-qa/README.md)):
+
+```typescript
+import path from 'node:path'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: [path.resolve(__dirname, 'plugins/clipper-qa/index.js')],
+      },
+    }),
+  ],
+})
+```
+
+Используйте `path.resolve`, чтобы путь к плагину одинаково работал на Windows и Unix.
+
+### Вариант B: только виджет вручную
+
+Если Babel-плагин не подключаете, импортируйте компонент в корневой layout (или аналог) и отрендерьте его один раз на клиенте, например в конце `<body>`:
+
+```tsx
+import { ClipperQA } from '../plugins/clipper-qa/ClipperQA'
+// или через алиас / обёртку в `src/components/clipper-qa/ClipperQA.tsx`
+
+// …
+<body>
+  {children}
+  <ClipperQA />
+</body>
+```
+
+Без плагина атрибуты `data-qa-*` в JSX **не** появятся автоматически — их нужно добавлять вручную или подключить плагин.
+
+### Рекомендация по импорту
+
+Удобно завести в приложении тонкую обёртку `src/components/clipper-qa/ClipperQA.tsx`, реэкспортирующую `plugins/clipper-qa/ClipperQA.tsx`, и импортировать виджет оттуда — так проще с алиасами (`@/…`) и единой точкой подключения.
