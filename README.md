@@ -1,146 +1,138 @@
+This translation is optimized for the Dutch IT market, which highly values **Clean Code**, **Systematic Automation**, and **Practical Innovation**. The tone is professional, technical, and direct.
+
+-----
+
 # ClipperQA
 
-Интеллектуальный "клипер" для React-приложений, который позволяет тестировщикам собирать серию багов с полным техническим контекстом для ИИ-разработки.
+An intelligent "clipper" for React applications designed to empower QA engineers to capture a series of bugs with full technical context for AI-driven development.
 
-### Основные возможности:
+### Core Capabilities:
 
-- **Component Inspection:** Автоматическое определение пути к файлу (`data-qa-file`).
-- **Context Capture:** Захват пропсов из React Fiber и Tailwind-классов.
-- **Batching:** Сбор серии багов в LocalStorage для единой отправки в Replit/GitLab.
-- **Responsive Aware:** Фиксация активного брейкпоинта (Mobile/Desktop).
+  * **Component Inspection:** Automatic resolution of file paths via `data-qa-file` attributes.
+  * **Context Capture:** Extraction of props from the React Fiber tree and Tailwind CSS classes.
+  * **Batching:** LocalStorage-based aggregation of bug reports for unified submission to Replit or GitLab.
+  * **Responsive Awareness:** Automatic detection and logging of the active breakpoint (Mobile/Desktop).
 
-Ручное тестирование с отправкой данных в ИИ
+**Human-in-the-Loop: Manual testing with AI-ready data delivery.**
 
-## Место в общей схеме
+## System Architecture
+
+The tool sits at the heart of the "Human-in-the-Loop" feedback cycle, ensuring that AI agents receive structured, actionable data rather than ambiguous prose.
 
 ```mermaid
 flowchart TD
-    A[20. получение протестированного кода фичи от ИИ] -->|деплой| B(Создание или обновление стенда фичи)
-    B --> |оправка ссылки тестировщику| C{Есть замечания?}
-    C -->|нет| D[25. Deploy в stage]
-    C -->|да| E[23. Форматирование и доставка замечаний в ИИ]
-    E --> F[Правки ИИ по замечаниям]
-    F -->|Пуш в ветку с фичой| B
+    A[20. Receive tested feature code from AI] -->|Deploy| B(Create/Update Feature Environment)
+    B --> |Send URL to QA Engineer| C{Feedback?}
+    C -->|No| D[25. Deploy to Stage]
+    C -->|Yes| E[23. Format & Deliver Feedback to AI]
+    E --> F[AI Refinement based on Feedback]
+    F -->|Push to Feature Branch| B
 ```
 
-### Окружение
+### Environment Workflow
 
-- создание отдельной ветки для ручного тестирования фичи
-- создание отдельного стенда для этой ветки (dev mode)
-- отправка ссылки тестировщику
+  * Provisioning of dedicated feature branches for manual testing.
+  * Automatic deployment of ephemeral environments (Dev Mode).
+  * Seamless URL delivery to the QA team.
 
-## Задача
+## The Problem & Strategic Goal
 
-Нужен иструмент для ручного сбора и описания багов
+The goal is to provide a tool for manual bug collection and description that bridges the gap between human intuition and machine execution.
 
-### Условия
+### Requirements
 
-- удобный и понятный для тестировщика
-- структурированное описание багов для ИИ
-- экономия (токенов и времени сборки)
+  * **User-Centric:** Intuitive and low-friction for QA engineers.
+  * **AI-Native:** Structured bug descriptions optimized for Large Language Models (LLMs).
+  * **Efficiency:** Reduction in token consumption and CI/CD build cycles.
 
-### Поиск
+### Market Context
 
-Все готовые инструменты обратной связи ориентированы на человека, а не на ИИ. Одни направлены либо на упрощении интеграции с gitlab issue (Marker.io), другие - на сбор дополнительной инфы: скриншоты/видео, логи консоли и сетевые запросы, данные об окружении (rrweb).
+Most existing feedback tools (e.g., Marker.io, rrweb) are built for human-to-human communication. They often result in "information noise"—unstructured screenshots, video recordings, and massive log dumps. For an AI, this lack of focus leads to context dilution and excessive token costs.
 
-Для ИИ это означает отсутствие структуры, информационный шум (потеря фокуса) и лишнюю трату токенов.
+ClipperQA solves this by providing a lightweight, custom integration that "speaks" the language of the codebase.
 
-Самый экономичный вариант - написать маленький кастомный скрипт.
+-----
 
-### Клиппер
+## Technical Implementation: The Clipper
 
-Скрипт интегрируется на этапе сборки.
-Работает по принципу «Инспектора компонентов».
+The script integrates during the build phase and operates on the "Component Inspector" principle.
 
-data-атрибуты - при сборке фронтенда в каждый компонент добавляется его название и путь к файлу.
+### Automated Metadata (Data Attributes)
 
-Пример в коде:
+During the frontend build process, the plugin injects the component name and source file path into each element.
 
-```
+**Code Example:**
+
+```html
 <div
     data-qa-component="Header"
     data-qa-file="src/components/Header.tsx"
 >...</div>
 ```
 
-Когда тестировщик кликает на баг (например с Alt), скрипт поднимается вверх по дереву до ближайшего элемента с нужным data-атрибутом.
+When a tester identifies a bug (e.g., via **Alt + Click**), the script traverses the DOM tree to the nearest element containing the required metadata.
 
-Клиппер собирает структурированно инфо для ИИ. Пример одного объекта из серии:
+### Structured AI Context
 
-```JSON
+ClipperQA generates a precise JSON object for each issue. Example of a batched bug report:
+
+```json
   {
     "id": "11bae0aa-d75b-4d69-bd51-84e22ddfdece",
     "file": "src/components/ProductCard.tsx",
     "component": "ProductCard",
     "classes": "text-lg font-medium text-zinc-700 dark:text-zinc-300",
-    "description": "Кнопка 'Сохранить' выходит за границы контейнера на мобильных устройствах",
-    "breakpoint": "Desktop"
+    "description": "The 'Save' button overflows the container on mobile devices.",
+    "breakpoint": "Mobile"
   }
 ```
 
-В структуре указан тип экрана (декстоп/мобилка) и список классов проблемного элемента.
+The structure captures the exact responsive state and the Tailwind classes of the affected element, allowing the AI to pinpoint the fix immediately.
 
-### Сбор
+-----
 
-Чтобы экономить токены и время сборки, лучше обрабатывать баги пакетно, сессиями. Сессия - это набор багов.
+## Workflow & Lifecycle
 
-Промежуточные данные сохраняются в LocalStorage. Это гарантирует выживаемость данных при падении страницы или долгих редиректах. Есть кнопка очистки.
+### 1\. Batching & Persistence
 
-Виджет синхронизируется по вкладкам, если тестировщик их несколько (через window.addEventListener('storage', ...)).
+To optimize token usage, bugs are processed in **sessions**.
 
-Виджет клипера визуально «висит» над сайтом и копит данные, пока QA перемещается по разделам. Можно сделать подсветку выделяемого элемента.
+  * **LocalStorage:** Data is persisted in LocalStorage to ensure survival across page reloads or redirects.
+  * **Cross-Tab Sync:** The widget synchronizes across multiple open tabs using the `storage` event listener.
+  * **Visual Feedback:** An overlay "floats" over the application, allowing QA to collect 5-10 bugs per session with optional element highlighting.
 
-![](./public/screen.jpg)
+### 2\. Delivery & Execution
 
-### Отправка
+  * **Submission:** Upon clicking "Send," the widget generates a single GitLab Issue containing the structured JSON payload. LocalStorage is cleared.
+  * **AI Trigger:** A GitLab Webhook triggers the AI agent.
+  * **Fixing:** The AI processes all bugs in a single pass within the feature branch. This is particularly effective for Tailwind CSS adjustments.
+  * **Re-deploy:** GitLab CI automatically updates the feature environment.
 
-Финальный цикл выглядит так:
+-----
 
-Batching: Тестировщик проходит по сайту, кликает на компоненты и собирает 5-10 багов в корзину виджета.
+## Integration Guide
 
-Delivery: Нажимает «Отправить», и виджет формирует один GitLab Issue с JSON-структурой внутри. LocalStorage очищается.
+The widget and Babel plugin are located in the [`plugins/clipper-qa`](https://www.google.com/search?q=./plugins/clipper-qa/) directory.
 
-AI Trigger: GitLab Webhook активирует ИИ-агента.
+### Installation
 
-Fixing: ИИ за один проход правит все файлы в feature-ветке. Особенно удобно это с Tailwind.
+Copy the `plugins/clipper-qa` folder (including `index.js`, `babel-plugin-clipper-qa.js`, and `ClipperQA.tsx`) into your repository.
 
-Re-deploy: GitLab CI обновляет контейнер в облаке.
+### Dependencies
 
-## Подключение виджета в другой проект
-
-Виджет и Babel-плагин лежат в каталоге [`plugins/clipper-qa`](./plugins/clipper-qa/). Подробности по поведению плагина и примерам конфигов — в [`plugins/clipper-qa/README.md`](./plugins/clipper-qa/README.md).
-
-### Что скопировать
-
-Скопируйте в целевой репозиторий всю папку `plugins/clipper-qa` (как минимум файлы `index.js`, `babel-plugin-clipper-qa.js`, `ClipperQA.tsx`). Путь к плагину в конфиге Babel/Vite должен совпадать с фактическим расположением (например `./plugins/clipper-qa/index.js` из корня проекта).
-
-### Зависимости npm
-
-| Пакет | Назначение |
+| Package | Purpose |
 |--------|-------------|
-| **`react`**, **`react-dom`** | Виджет — клиентский React-компонент (`ClipperQA.tsx`). |
-| **`lucide-react`** | Иконки в панели виджета. |
-| **`@babel/core`** | Нужен для сборки с кастомным Babel (например отдельный скрипт или явная настройка); в Next.js обычно уже тянется транзитивно через `next`. |
+| **`react`**, **`react-dom`** | Core UI for the `ClipperQA.tsx` widget. |
+| **`lucide-react`** | UI Icons for the widget panel. |
+| **`@babel/core`** | Required for custom Babel transformations. |
 
-Дополнительно по стеку:
+### Configuration
 
-- **Next.js** — в `devDependencies` достаточно `next`; в корне проекта добавьте [`.babelrc`](./.babelrc) с пресетом `next/babel` и плагином `./plugins/clipper-qa/index.js` (см. ниже).
-- **Vite + React** — `@vitejs/plugin-react` и подключение того же `index.js` в `babel.plugins` у `react()` (пример в плагиновом README).
+#### Option A: Automatic Instrumentation (Babel)
 
-Установка минимального набора для «голого» React-проекта с Babel:
+In **development** mode, the plugin automatically injects `data-qa-*` attributes and mounts the `<ClipperQA />` widget into entry points (`App.tsx` or `layout.tsx`).
 
-```bash
-npm install react react-dom lucide-react
-npm install --save-dev @babel/core
-```
-
-(Для Next/Vite добавьте к этому свои зависимости сборщика.)
-
-### Вариант A: автоматическая разметка и вставка виджета (Babel)
-
-В **development** плагин добавляет на JSX атрибуты `data-qa-file` / `data-qa-component` и может сам вставить `<ClipperQA />` в распознаваемые entry-файлы (`src/app/layout.tsx`, `app/layout.tsx`, `src/App.tsx`). В **production** (`NODE_ENV !== "development"`) код не меняется.
-
-**Next.js** — `.babelrc` в корне целевого проекта:
+**Next.js (`.babelrc`):**
 
 ```json
 {
@@ -149,9 +141,7 @@ npm install --save-dev @babel/core
 }
 ```
 
-**Next.js 16 + `next dev` (Turbopack):** Turbopack может вести себя иначе, чем Webpack, по отношению к `.babelrc`. Надёжные варианты: запуск `next dev --webpack` или ручное подключение `<ClipperQA />` в корневом layout (вариант B).
-
-**Vite** — фрагмент `vite.config.ts` (полный пример — в [`plugins/clipper-qa/README.md`](./plugins/clipper-qa/README.md)):
+**Vite (`vite.config.ts`):**
 
 ```typescript
 import path from 'node:path'
@@ -169,25 +159,23 @@ export default defineConfig({
 })
 ```
 
-Используйте `path.resolve`, чтобы путь к плагину одинаково работал на Windows и Unix.
+#### Option B: Manual Implementation
 
-### Вариант B: только виджет вручную
-
-Если Babel-плагин не подключаете, импортируйте компонент в корневой layout (или аналог) и отрендерьте его один раз на клиенте, например в конце `<body>`:
+If you prefer not to use the Babel plugin for widget injection, import the component manually into your root layout:
 
 ```tsx
-import { ClipperQA } from '../plugins/clipper-qa/ClipperQA'
-// или через алиас / обёртку в `src/components/clipper-qa/ClipperQA.tsx`
+import { ClipperQA } from '../plugins/clipper-qa/ClipperQA';
 
-// …
-<body>
-  {children}
-  <ClipperQA />
-</body>
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        {process.env.NODE_ENV === 'development' && <ClipperQA />}
+      </body>
+    </html>
+  );
+}
 ```
 
-Без плагина атрибуты `data-qa-*` в JSX **не** появятся автоматически — их нужно добавлять вручную или подключить плагин.
-
-### Рекомендация по импорту
-
-Удобно завести в приложении тонкую обёртку `src/components/clipper-qa/ClipperQA.tsx`, реэкспортирующую `plugins/clipper-qa/ClipperQA.tsx`, и импортировать виджет оттуда — так проще с алиасами (`@/…`) и единой точкой подключения.
+*Note: Without the plugin, `data-qa-*` attributes must be added to your JSX components manually.*
