@@ -44,6 +44,8 @@ flowchart TD
 3.  **Activador de IA:** Un Webhook de GitLab activa al agente de IA para corregir todos los problemas reportados en un solo pase.
 4.  **Redespliegue:** El CI de GitLab actualiza el entorno de la funcionalidad para la verificación final.
 
+![](./public/screen.jpg)
+
 ---
 
 ## Integración Técnica

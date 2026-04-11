@@ -46,6 +46,8 @@ flowchart TD
 3.  **AI Trigger:** A GitLab Webhook activates the AI agent to fix all reported issues in a single pass.
 4.  **Re-deploy:** GitLab CI updates the feature environment for final verification.
 
+![](./public/screen.jpg)
+
 ---
 
 ## Technical Integration
