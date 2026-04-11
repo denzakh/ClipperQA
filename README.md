@@ -1,8 +1,8 @@
 ![React](https://img.shields.io/badge/React-18%2B-blue?style=flat-square&logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css) ![AI Integration](https://img.shields.io/badge/AI-Integration-8A2BE2?style=flat-square&logo=openai) ![QA Optimized](https://img.shields.io/badge/QA-Optimized-orange?style=flat-square&logo=checkmarx)
 
-Translation: [Читать на русском языке (🇷🇺)](./README.ru.md) | [Leer en español (es)](./README.es.md)
+Translation: [Читать на русском языке (🇷🇺)](./README.ru.md)
 
-# ClipperQA: Context-Aware QA Orchestrator
+# ClipperQA: A Concept for AI-Driven QA Orchestration
 
 **ClipperQA** is a high-precision diagnostic engine for React-based ecosystems. It bridges the gap between manual quality assurance and AI-driven remediation by capturing full technical telemetry at the moment of bug discovery.
 
@@ -113,6 +113,15 @@ import { ClipperQA } from '../plugins/clipper-qa/ClipperQA'
 
 - **No PII Leakage:** Unlike video recorders, ClipperQA only captures structural metadata and specific props.
 - **Audit Ready:** Every bug report is linked to a specific git commit and file path, creating a transparent audit trail for compliance.
+
+---
+
+⚖️ Legal & Disclaimer
+Concept Status: This repository is a Reference Implementation of a QA-to-AI feedback loop concept. It is intended for educational and demonstrative purposes to showcase how structured telemetry can optimize AI-driven remediation cycles.
+
+Ownership Notice: This project was conceptualized during professional development. The code provided here is a generalized, clean-room implementation of the pattern.
+
+License: This reference implementation is provided "as-is" without a formal open-source license. For inquiries regarding commercial use, integration, or intellectual property, please contact the repository owner.
 
 ---
 
