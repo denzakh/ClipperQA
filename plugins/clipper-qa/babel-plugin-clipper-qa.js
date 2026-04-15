@@ -1,6 +1,6 @@
 /**
  * ClipperQA Babel plugin — implementation when enabled via env.
- * - Injects `data-qa-file` / `data-qa-component` on JSX (except `ClipperQA.tsx` in this folder).
+ * - Injects `data-qa-file` / `data-qa-component` on JSX (except any source under `plugins/clipper-qa/`).
  * - Injects `import { ClipperQA }` + `<ClipperQA />` into recognized app entry files (`layout` / `App`).
  * Consumed via `index.js` (re-export) from `.babelrc` or Vite Babel config.
  *
@@ -9,7 +9,6 @@
  */
 const path = require("path");
 
-const CLIPPER_SOURCE_BASENAME = "ClipperQA";
 const CLIPPER_DIR_MARKER = "plugins/clipper-qa/";
 
 function isClipperQaEnabled() {
@@ -22,9 +21,9 @@ function normalizeFile(filename) {
   return (filename || "").replace(/\\/g, "/");
 }
 
-function isClipperQaSourceFile(filename) {
-  const n = normalizeFile(filename);
-  return n.includes(`${CLIPPER_DIR_MARKER}${CLIPPER_SOURCE_BASENAME}`);
+/** Skip data-qa injection for the whole plugin package (widget + subcomponents). */
+function isClipperPluginSourceFile(filename) {
+  return normalizeFile(filename).includes(CLIPPER_DIR_MARKER);
 }
 
 function isEntryFile(filename) {
@@ -254,7 +253,7 @@ module.exports = function clipperQaBabelPlugin(babel) {
       JSXOpeningElement(elementPath, state) {
         if (!isClipperQaEnabled()) return;
         const filename = state.file.opts.filename || "";
-        if (isClipperQaSourceFile(filename)) return;
+        if (isClipperPluginSourceFile(filename)) return;
 
         const componentName = getComponentName(elementPath);
         if (!componentName) return;
