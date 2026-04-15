@@ -1,128 +1,73 @@
-![React](https://img.shields.io/badge/React-18%2B-blue?style=flat-square&logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css) ![AI Integration](https://img.shields.io/badge/AI-Integration-8A2BE2?style=flat-square&logo=openai) ![QA Optimized](https://img.shields.io/badge/QA-Optimized-orange?style=flat-square&logo=checkmarx)
+![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css) ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 
 Translation: [Читать на русском языке (🇷🇺)](./README.ru.md)
 
 # ClipperQA: A Concept for AI-Driven QA Orchestration
 
-**ClipperQA** is a high-precision diagnostic engine for React-based ecosystems. It bridges the gap between manual quality assurance and AI-driven remediation by capturing full technical telemetry at the moment of bug discovery.
+**ClipperQA** is a reference widget and Babel plugin for React apps. It helps QA collect structured bug context (file path, component name, classes, breakpoint, notes) for AI-assisted fixes—without dumping full DOM or video.
 
-### Core Capabilities:
+### Core capabilities
 
-- **Granular Traceability:** Automatically maps UI elements to source-level file paths using `data-qa-file`.
-- **Deterministic Context Capture:** Extracts the exact state of React Fiber props and Tailwind CSS classes.
-- **Contextual Batching:** Aggregates bug reports in LocalStorage for unified submission, ensuring data persistence.
-- **Responsive Awareness:** Logs the active breakpoint (Mobile/Desktop) to ensure UI fixes are applied correctly.
-
----
-
-## Why ClipperQA? (AI-Native vs. Human-Centric)
-
-Current feedback solutions (e.g., Marker.io, rrweb) are designed for **human-to-human** communication. They focus on video recordings and console logs, which create "information noise" for LLMs.
-
-- **Information Density:** ClipperQA delivers **structured JSON**, allowing AI to pinpoint the exact line of code.
-- **Token Optimization:** By filtering out irrelevant data, ClipperQA reduces prompt sizes by up to **60–80%** compared to raw HTML dumps.
-- **Cycle Velocity:** Direct file-path mapping enables AI to perform one-pass remediation, avoiding multiple "where is this component?" iterations.
+- **Traceability:** Build-time `data-qa-file` / `data-qa-component` on JSX (when enabled).
+- **Context capture:** Element classes and viewport breakpoint at clip time.
+- **Batching:** Bugs stored in `localStorage` until send or copy.
+- **Delivery options:** In **default** mode, POST JSON to your API URLs from env; in **copyinfo** mode, copy a Jira-friendly Markdown block to the clipboard.
 
 ---
 
-## Operational Lifecycle (Human-in-the-Loop)
+## Why ClipperQA?
 
-ClipperQA empowers the QA Engineer to act as the "Ground Truth" provider while the AI acts as the "Remediation Engine".
+Many feedback tools optimize for human-to-human handoff (screenshots, session replay). ClipperQA focuses on **compact, structured payloads** so LLMs can map issues to source files with less noise.
+
+---
+
+## Operational lifecycle (concept)
 
 ```mermaid
 flowchart TD
-    A[AI delivers tested feature code] -->|Deploy| B(Ephemeral Feature Environment)
-    B --> |Send URL to QA Engineer| C{Manual Validation}
-    C -->|Pass| D[Deploy to Production/Stage]
-    C -->|Issue Identified| E[Structured Context Delivery via ClipperQA]
-    E --> F[AI-Driven Remediation]
-    F -->|Push Fix to Feature Branch| B
+    A[Feature built or reviewed] -->|Deploy| B(Feature or staging URL)
+    B --> C{QA validation}
+    C -->|Pass| D[Promote]
+    C -->|Issues| E[ClipperQA collects structured clips]
+    E --> F[AI or backend consumes JSON or Markdown]
+    F -->|Fix branch| B
 ```
 
-### Detailed Workflow:
+Typical steps:
 
-1.  **Batching:** The tester navigates the site, clicking components (e.g., Alt+Click) to collect 5-10 bugs into the widget's "basket".
-2.  **Delivery:** Upon clicking "Send," the widget generates a single GitLab Issue with the JSON payload and clears LocalStorage.
-3.  **AI Trigger:** A GitLab Webhook activates the AI agent to fix all reported issues in a single pass.
-4.  **Re-deploy:** GitLab CI updates the feature environment for final verification.
+1. QA enables the widget on a test build and clips elements (e.g. Alt+click or Inspect mode).
+2. They describe each clip in the panel.
+3. **Default:** **Send to AI** posts `{ bugs, context }` to your endpoint; **Well done** posts `{ done: true, context }` to another. **Copy-info:** **Copy** puts Jira Markdown (including stand / app / branch metadata) on the clipboard.
 
 ![](./public/screen.jpg)
 
 ---
 
-## Technical Integration
+## Technical integration (quick pointer)
 
-### 1. Prerequisites
+Implementation details—**all environment variables**, **Next/Vite/Babel snippets**, **API request bodies**, **CORS**, **file layout**, and **Turbopack notes**—live in one place:
 
-| Package                      | Purpose                                  |
-| ---------------------------- | ---------------------------------------- |
-| **`react`**, **`react-dom`** | Core UI for the `ClipperQA.tsx` widget.  |
-| **`lucide-react`**           | UI Icons for the panel.                  |
-| **`@babel/core`**            | Required for build-time instrumentation. |
+**[plugins/clipper-qa/README.md](./plugins/clipper-qa/README.md)** (authoritative integration guide).
 
-### 2. Implementation Options
+Minimal checklist for this repo:
 
-#### Option A: Automatic Instrumentation (Babel)
+1. Set `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` (or `VITE_CLIPPER_QA_ENABLED=true` for Vite) so the Babel plugin runs and the widget can render.
+2. Render `<ClipperQA />` in the root layout only when enabled (see [`src/app/layout.tsx`](./src/app/layout.tsx) and `clipperQaIsEnabled()` in the plugin).
+3. For **default** mode APIs, set `NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL` and `NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL` as documented in the plugin README.
 
-The plugin adds `data-qa-*` attributes and can auto-inject the `<ClipperQA />` widget into entry files like `src/App.tsx` or `layout.tsx`.
-
-**Next.js (`.babelrc`):**
-
-```json
-{
-  "presets": ["next/babel"],
-  "plugins": ["./plugins/clipper-qa/index.js"]
-}
-```
-
-**Vite (`vite.config.ts`):**
-
-```typescript
-import path from 'node:path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: [path.resolve(__dirname, 'plugins/clipper-qa/index.js')],
-      },
-    }),
-  ],
-})
-```
-
-#### Option B: Manual Widget Mounting
-
-If you prefer not to use the Babel plugin for widget injection, import it manually into your root component:
-
-```tsx
-import { ClipperQA } from '../plugins/clipper-qa/ClipperQA'
-
-// Render this at the root of your application
-;<body>
-  {children}
-  <ClipperQA />
-</body>
-```
+Dependencies used by the widget: `react`, `react-dom`, `lucide-react`; Babel plugin needs the app’s Babel pipeline (e.g. Next’s `next/babel` or Vite + `@vitejs/plugin-react`).
 
 ---
 
-## Safety & Compliance
+## Safety and compliance
 
-- **No PII Leakage:** Unlike video recorders, ClipperQA only captures structural metadata and specific props.
-- **Audit Ready:** Every bug report is linked to a specific git commit and file path, creating a transparent audit trail for compliance.
-
----
-
-⚖️ Legal & Disclaimer
-Concept Status: This repository is a Reference Implementation of a QA-to-AI feedback loop concept. It is intended for educational and demonstrative purposes to showcase how structured telemetry can optimize AI-driven remediation cycles.
-
-Ownership Notice: This project was conceptualized during professional development. The code provided here is a generalized, clean-room implementation of the pattern.
-
-License: This reference implementation is provided "as-is" without a formal open-source license. For inquiries regarding commercial use, integration, or intellectual property, please contact the repository owner.
+- **No PII by design:** Only structural metadata you clip (paths, classes, your descriptions)—no automatic screen recording.
+- **Audit context:** Optional build-time metadata (app name, version, branch) for exports—see `next.config.ts` and plugin README.
 
 ---
 
-**Designed for precision. Optimized for AI. Built for the modern SDLC.**
+## Legal and disclaimer
+
+This repository is a **reference implementation** for education and demonstration. It is not a formal open-source product release. The code is a generalized pattern; for commercial use or IP questions, contact the repository owner.
+
+**Designed for precision. Optimized for structured handoff to AI.**
