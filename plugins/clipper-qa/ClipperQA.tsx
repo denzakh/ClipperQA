@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bug, ClipboardList, Copy, ScanSearch, Send, ThumbsUp, Trash2, X } from 'lucide-react'
 
-import { clipperQaActionModeRaw } from './clipperQaEnv'
+import {
+  clipperQaActionModeRaw,
+  clipperQaSendToAiUrl,
+  clipperQaWellDoneUrl,
+} from './clipperQaEnv'
 import { buildClipperExportMeta, formatBugsForJira } from './formatBugsForJira'
 import type { ClippedBug, ClipperQaActionMode } from './types'
 
@@ -183,6 +187,9 @@ export const ClipperQA = () => {
   /** Persisted for future WELL DONE behavior; hydrate + effect keep STORAGE_WELL_DONE in sync */
   const [wellDoneAck, setWellDoneAck] = useState(false)
   const [copyHint, setCopyHint] = useState<string | null>(null)
+  const [defaultApiHint, setDefaultApiHint] = useState<string | null>(null)
+  const [sendingAi, setSendingAi] = useState(false)
+  const [sendingDone, setSendingDone] = useState(false)
 
   const actionMode = getClipperQaActionMode()
 
@@ -421,8 +428,18 @@ export const ClipperQA = () => {
     setBugs((prev) => prev.filter((b) => b.id !== id))
   }
 
-  const sendToAi = () => {
-    const payload = bugs.map(({ id, file, component, classes, description, breakpoint }) => ({
+  const scheduleClearDefaultHint = useCallback(() => {
+    window.setTimeout(() => setDefaultApiHint(null), 3000)
+  }, [])
+
+  const sendToAi = useCallback(async () => {
+    const url = clipperQaSendToAiUrl()?.trim()
+    if (!url) {
+      setDefaultApiHint('URL отправки в ИИ не задан (NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL)')
+      scheduleClearDefaultHint()
+      return
+    }
+    const bugsPayload = bugs.map(({ id, file, component, classes, description, breakpoint }) => ({
       id,
       file,
       component,
@@ -430,13 +447,65 @@ export const ClipperQA = () => {
       description,
       breakpoint,
     }))
-    console.log(JSON.stringify(payload, null, 2))
-  }
+    setSendingAi(true)
+    setDefaultApiHint(null)
+    try {
+      const context = buildClipperExportMeta()
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bugs: bugsPayload, context }),
+      })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+      setBugs([])
+      setDefaultApiHint('Данные отправлены в ИИ')
+      scheduleClearDefaultHint()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Ошибка сети'
+      setDefaultApiHint(msg)
+      scheduleClearDefaultHint()
+    } finally {
+      setSendingAi(false)
+    }
+  }, [bugs, scheduleClearDefaultHint])
+
+  const sendWellDone = useCallback(async () => {
+    const url = clipperQaWellDoneUrl()?.trim()
+    if (!url) {
+      setDefaultApiHint('URL для WELL DONE не задан (NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL)')
+      scheduleClearDefaultHint()
+      return
+    }
+    setSendingDone(true)
+    setDefaultApiHint(null)
+    try {
+      const context = buildClipperExportMeta()
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done: true, context }),
+      })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+      setWellDoneAck(true)
+      setDefaultApiHint('Сервер принял команду')
+      scheduleClearDefaultHint()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Ошибка сети'
+      setDefaultApiHint(msg)
+      scheduleClearDefaultHint()
+    } finally {
+      setSendingDone(false)
+    }
+  }, [scheduleClearDefaultHint])
 
   const copyBugsForJira = useCallback(async () => {
     const text = formatBugsForJira(bugs, buildClipperExportMeta())
     const ok = await copyTextToClipboard(text)
-    setCopyHint(ok ? 'Скопировано в буфер' : 'Не удалось скопировать')
+    setCopyHint(ok ? 'Copied to clipboard' : 'Copy failed')
     window.setTimeout(() => setCopyHint(null), 2500)
   }, [bugs])
 
@@ -543,9 +612,14 @@ export const ClipperQA = () => {
           )}
         </div>
 
-        {copyHint ? (
+        {actionMode === 'copyinfo' && copyHint ? (
           <p className="text-center text-xs text-zinc-600" role="status" aria-live="polite">
             {copyHint}
+          </p>
+        ) : null}
+        {actionMode === 'default' && defaultApiHint ? (
+          <p className="text-center text-xs text-zinc-600" role="status" aria-live="polite">
+            {defaultApiHint}
           </p>
         ) : null}
 
@@ -557,26 +631,29 @@ export const ClipperQA = () => {
               className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
             >
               <Copy className="h-4 w-4 shrink-0" strokeWidth={2} />
-              Скопировать
+              Copy
             </button>
           ) : null
         ) : bugs.length === 0 ? (
           <button
             type="button"
             data-acknowledged={wellDoneAck ? 'true' : 'false'}
-            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+            disabled={sendingDone}
+            onClick={() => void sendWellDone()}
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <ThumbsUp className="h-4 w-4 shrink-0" strokeWidth={2} />
-            WELL DONE
+            {sendingDone ? 'Sending…' : 'WELL DONE'}
           </button>
         ) : (
           <button
             type="button"
-            onClick={sendToAi}
-            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            disabled={sendingAi}
+            onClick={() => void sendToAi()}
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Send className="h-4 w-4 shrink-0" />
-            SEND TO AI
+            {sendingAi ? 'Sending…' : 'SEND TO AI'}
           </button>
         )}
       </div>

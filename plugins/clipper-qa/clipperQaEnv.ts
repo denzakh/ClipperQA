@@ -73,3 +73,19 @@ export function clipperQaGitBranchEnv(): string | undefined {
     viteString('VITE_CLIPPER_QA_GIT_BRANCH'),
   )
 }
+
+/** POST endpoint для режима default: отправка багов + context в ИИ. */
+export function clipperQaSendToAiUrl(): string | undefined {
+  return firstNonEmpty(
+    process.env.NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL,
+    viteString('VITE_CLIPPER_QA_SEND_TO_AI_URL'),
+  )
+}
+
+/** POST endpoint для режима default: команда WELL DONE + context. */
+export function clipperQaWellDoneUrl(): string | undefined {
+  return firstNonEmpty(
+    process.env.NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL,
+    viteString('VITE_CLIPPER_QA_WELL_DONE_URL'),
+  )
+}

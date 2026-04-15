@@ -34,8 +34,55 @@
 | `NEXT_PUBLIC_CLIPPER_QA_APP_NAME` | `VITE_CLIPPER_QA_APP_NAME` | Имя приложения в экспорте. |
 | `NEXT_PUBLIC_CLIPPER_QA_APP_VERSION` | `VITE_CLIPPER_QA_APP_VERSION` | Версия в экспорте. |
 | `NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH` | `VITE_CLIPPER_QA_GIT_BRANCH` | Ветка в экспорте. |
+| `NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL` | `VITE_CLIPPER_QA_SEND_TO_AI_URL` | Режим **`default`**: POST с телом `{ bugs, context }` (см. ниже). |
+| `NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL` | `VITE_CLIPPER_QA_WELL_DONE_URL` | Режим **`default`**: POST с телом `{ done: true, context }`. |
 
 В корневом **`next.config.ts`** для Next при сборке в `env` подставляются имя/версия из `package.json` и ветка (git / CI), если не заданы ни `NEXT_PUBLIC_*`, ни `VITE_*` для этих полей.
+
+### API в режиме `default` (SEND TO AI / WELL DONE)
+
+Запросы из браузера: **`fetch`**, `Content-Type: application/json`, успех по **`response.ok`** (2xx). Если URL не задан, виджет показывает подсказку и не вызывает сеть.
+
+**CORS:** при другом origin у API нужны корректные заголовки (`Access-Control-Allow-Origin` и т.д.), иначе браузер заблокирует ответ.
+
+**POST** `SEND_TO_AI_URL` — тело:
+
+```json
+{
+  "bugs": [
+    {
+      "id": "string",
+      "file": "string",
+      "component": "string",
+      "classes": "string",
+      "description": "string",
+      "breakpoint": "Mobile | Desktop"
+    }
+  ],
+  "context": {
+    "standUrl": "string",
+    "appName": "string",
+    "appVersion": "string",
+    "gitBranch": "string"
+  }
+}
+```
+
+Поле `context` совпадает с результатом `buildClipperExportMeta()` (те же поля, что в Markdown для Jira). После успеха список багов в виджете очищается.
+
+**POST** `WELL_DONE_URL` — тело:
+
+```json
+{
+  "done": true,
+  "context": {
+    "standUrl": "string",
+    "appName": "string",
+    "appVersion": "string",
+    "gitBranch": "string"
+  }
+}
+```
 
 Пример `.env.local`:
 
@@ -45,6 +92,8 @@ NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE=default
 # NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE=copyinfo
 # NEXT_PUBLIC_CLIPPER_QA_STAND_URL=https://staging.example.com
 # NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH=feature/qa-widget
+# NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL=https://api.example.com/clipper/ai
+# NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL=https://api.example.com/clipper/done
 ```
 
 Для **dev/build** флаг включения должен быть в **`process.env`** на момент запуска Babel (`next dev` / `next build` или `vite build`), иначе атрибуты не появятся. В Vite для клиента удобнее `.env` с префиксом **`VITE_`**; тогда для Babel в том же процессе задайте `VITE_CLIPPER_QA_ENABLED=true` или продублируйте `NEXT_PUBLIC_*`.
