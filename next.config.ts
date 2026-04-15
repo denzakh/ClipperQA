@@ -20,6 +20,9 @@ function resolveGitBranch(): string {
   if (process.env.NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH) {
     return process.env.NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH;
   }
+  if (process.env.VITE_CLIPPER_QA_GIT_BRANCH) {
+    return process.env.VITE_CLIPPER_QA_GIT_BRANCH;
+  }
   if (process.env.VERCEL_GIT_COMMIT_REF) {
     return process.env.VERCEL_GIT_COMMIT_REF;
   }
@@ -41,11 +44,17 @@ const gitBranch = resolveGitBranch();
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_CLIPPER_QA_APP_NAME:
-      process.env.NEXT_PUBLIC_CLIPPER_QA_APP_NAME || pkg.name,
+      process.env.NEXT_PUBLIC_CLIPPER_QA_APP_NAME ||
+      process.env.VITE_CLIPPER_QA_APP_NAME ||
+      pkg.name,
     NEXT_PUBLIC_CLIPPER_QA_APP_VERSION:
-      process.env.NEXT_PUBLIC_CLIPPER_QA_APP_VERSION || pkg.version,
+      process.env.NEXT_PUBLIC_CLIPPER_QA_APP_VERSION ||
+      process.env.VITE_CLIPPER_QA_APP_VERSION ||
+      pkg.version,
     NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH:
-      process.env.NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH || gitBranch,
+      process.env.NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH ||
+      process.env.VITE_CLIPPER_QA_GIT_BRANCH ||
+      gitBranch,
   },
 };
 

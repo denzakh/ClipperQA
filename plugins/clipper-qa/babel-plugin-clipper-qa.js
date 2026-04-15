@@ -4,7 +4,8 @@
  * - Injects `import { ClipperQA }` + `<ClipperQA />` into recognized app entry files (`layout` / `App`).
  * Consumed via `index.js` (re-export) from `.babelrc` or Vite Babel config.
  *
- * Enable with `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` (same flag as runtime / layout).
+ * Enable with `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` or `VITE_CLIPPER_QA_ENABLED=true`
+ * (тот же смысл, что в `clipperQaEnv.ts` / layout).
  */
 const path = require("path");
 
@@ -12,7 +13,9 @@ const CLIPPER_SOURCE_BASENAME = "ClipperQA";
 const CLIPPER_DIR_MARKER = "plugins/clipper-qa/";
 
 function isClipperQaEnabled() {
-  return process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED === "true";
+  const next = String(process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED ?? "").trim();
+  const vite = String(process.env.VITE_CLIPPER_QA_ENABLED ?? "").trim();
+  return next === "true" || vite === "true";
 }
 
 function normalizeFile(filename) {

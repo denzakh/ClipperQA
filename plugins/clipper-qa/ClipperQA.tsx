@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bug, ClipboardList, Copy, ScanSearch, Send, ThumbsUp, Trash2, X } from 'lucide-react'
 
+import { clipperQaActionModeRaw } from './clipperQaEnv'
 import { buildClipperExportMeta, formatBugsForJira } from './formatBugsForJira'
 import type { ClippedBug, ClipperQaActionMode } from './types'
 
@@ -18,7 +19,7 @@ const OUTLINE_CAPTURE = '2px solid #ef4444'
 const OUTLINE_OFFSET = '0px'
 
 function getClipperQaActionMode(): ClipperQaActionMode {
-  const v = (process.env.NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE ?? '').trim().toLowerCase()
+  const v = clipperQaActionModeRaw().toLowerCase()
   if (v === 'copyinfo') return 'copyinfo'
   return 'default'
 }

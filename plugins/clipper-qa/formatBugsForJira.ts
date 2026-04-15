@@ -1,3 +1,9 @@
+import {
+  clipperQaAppNameEnv,
+  clipperQaAppVersionEnv,
+  clipperQaGitBranchEnv,
+  clipperQaStandUrlEnv,
+} from './clipperQaEnv'
 import type { ClippedBug } from './types'
 
 /** Метаданные для префикса экспорта (стенд, сборка, ветка). */
@@ -18,17 +24,16 @@ function displayOrDash(v: string | undefined): string {
  * Вызывайте в браузере (например по клику «Скопировать»), чтобы `origin` был корректен.
  */
 export function buildClipperExportMeta(): JiraExportMeta {
-  const standEnv = (process.env.NEXT_PUBLIC_CLIPPER_QA_STAND_URL ?? '').trim()
-  let standUrl = standEnv
+  let standUrl = clipperQaStandUrlEnv() ?? ''
   if (!standUrl && typeof window !== 'undefined') {
     standUrl = window.location.origin
   }
 
   return {
     standUrl: displayOrDash(standUrl),
-    appName: displayOrDash(process.env.NEXT_PUBLIC_CLIPPER_QA_APP_NAME),
-    appVersion: displayOrDash(process.env.NEXT_PUBLIC_CLIPPER_QA_APP_VERSION),
-    gitBranch: displayOrDash(process.env.NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH),
+    appName: displayOrDash(clipperQaAppNameEnv()),
+    appVersion: displayOrDash(clipperQaAppVersionEnv()),
+    gitBranch: displayOrDash(clipperQaGitBranchEnv()),
   }
 }
 

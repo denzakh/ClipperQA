@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { clipperQaIsEnabled } from "@/../plugins/clipper-qa/clipperQaEnv";
 import { ClipperQA } from "@/../plugins/clipper-qa/ClipperQA";
 import { Navbar } from "@/components/ui/Navbar";
 import "./globals.css";
 
-const clipperQaEnabled =
-  process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED === "true";
+const clipperQaEnabled = clipperQaIsEnabled();
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

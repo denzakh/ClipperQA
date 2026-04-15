@@ -1,35 +1,41 @@
 # ClipperQA (`plugins/clipper-qa`)
 
-Набор для QA: Babel-трансформер помечает JSX и при необходимости вставляет виджет; сам виджет — React-компонент. Всё включается одной переменной **`NEXT_PUBLIC_CLIPPER_QA_ENABLED=true`** (логика **не** завязана на `NODE_ENV`).
+Набор для QA: Babel-трансформер помечает JSX и при необходимости вставляет виджет; сам виджет — React-компонент. Включается флагом **`NEXT_PUBLIC_CLIPPER_QA_ENABLED=true`** или **`VITE_CLIPPER_QA_ENABLED=true`** (логика **не** завязана на `NODE_ENV`). Рантайм читает оба варианта через **[`clipperQaEnv.ts`](clipperQaEnv.ts)**.
 
 ## Состав папки
 
 | Файл                             | Назначение                                                                                                                                                                                                                                                                                                            |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`index.js`**                   | Точка входа для Babel: реэкспорт `babel-plugin-clipper-qa.js`. Подключайте в `.babelrc` / Vite именно его.                                                                                                                                                                                                            |
-| **`babel-plugin-clipper-qa.js`** | Плагин: при `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` добавляет `data-qa-component` / `data-qa-file` на JSX (кроме `ClipperQA.tsx` в этой папке); для entry (`src/app/layout.tsx`, `app/layout.tsx`, `src/App.tsx`) при отсутствии импорта/JSX `ClipperQA` вставляет импорт и `<ClipperQA />` в конец `<body>` или корня. |
-| **`ClipperQA.tsx`**              | Клиентский виджет (`"use client"`): клипы, инспектор, LocalStorage, нижние кнопки в зависимости от `NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE`.                                                                                                                                                                              |
+| **`babel-plugin-clipper-qa.js`** | Плагин: при `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` **или** `VITE_CLIPPER_QA_ENABLED=true` добавляет `data-qa-component` / `data-qa-file` на JSX (кроме `ClipperQA.tsx` в этой папке); для entry при отсутствии импорта/JSX `ClipperQA` вставляет импорт и `<ClipperQA />` в конец `<body>` или корня.                 |
+| **`ClipperQA.tsx`**              | Клиентский виджет (`"use client"`): клипы, инспектор, LocalStorage; режим кнопок через `clipperQaActionModeRaw()` / `clipperQaEnv.ts`.                                                                                                                                                                                 |
 | **`types.ts`**                   | Общие типы: `ClippedBug`, `ClipperQaActionMode`.                                                                                                                                                                                                                                                                      |
 | **`formatBugsForJira.ts`**       | Экспорт в текст: `formatBugsForJira`, `buildClipperExportMeta`, тип `JiraExportMeta` (Markdown для вставки в описание задачи в Jira).                                                                                                                                                                                 |
+| **`clipperQaEnv.ts`**            | Универсальный резолвер: для каждой настройки сначала `NEXT_PUBLIC_CLIPPER_QA_*`, иначе `import.meta.env.VITE_CLIPPER_QA_*` (Vite).                                                                                                                                                                                      |
 | **`README.md`**                  | Эта документация.                                                                                                                                                                                                                                                                                                     |
 
 ## Поведение плагина
 
 - **Чистота репозитория:** в исходниках нет лишних `data-qa-*`; они появляются только в сборке/деве, когда флаг включён.
-- **Выключено:** если `NEXT_PUBLIC_CLIPPER_QA_ENABLED` не равен строке `"true"`, плагин **ничего** не меняет (ни атрибутов, ни автоподключения виджета).
+- **Выключено:** если ни `NEXT_PUBLIC_CLIPPER_QA_ENABLED`, ни `VITE_CLIPPER_QA_ENABLED` не равны строке `"true"`, плагин **ничего** не меняет (ни атрибутов, ни автоподключения виджета).
 - **Повторная инъекция:** если в entry уже есть импорт или JSX с именем `ClipperQA`, плагин виджет не дублирует.
 
-В приложении виджет нужно рендерить **только при том же флаге**, что и для Babel (например в `app/layout.tsx`: `{process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED === "true" ? <ClipperQA /> : null}`), иначе в проде останется мёртвый импорт без `data-qa-*`.
+В приложении виджет нужно рендерить **только при том же флаге**, что и для Babel (в этом репозитории: `clipperQaIsEnabled()` из `clipperQaEnv.ts`), иначе в проде останется мёртвый импорт без `data-qa-*`.
 
 ## Переменные окружения
 
-| Переменная                                                              | Назначение                                                                                                                                                                                                                                                                                               |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_CLIPPER_QA_ENABLED`                                        | **`"true"`** — Babel добавляет `data-qa-*`; в layout должен рендериться `<ClipperQA />`. Любое другое значение — QA-слой выключен.                                                                                                                                                                       |
-| `NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE`                                    | Режим нижней панели: не задано или `default` — при пустом списке **WELL DONE**, при клипах **SEND TO AI** (сейчас лог в консоль). **`copyinfo`** — при пустом списке кнопки нет; при клипах одна кнопка **«Скопировать»** (текст для Jira в буфер). Регистр значения не важен (`copyinfo` / `copyinfo`). |
-| `NEXT_PUBLIC_CLIPPER_QA_STAND_URL`                                      | Явный URL тестового стенда в шапке экспорта; если пусто, при копировании подставляется `window.location.origin`.                                                                                                                                                                                         |
-| `NEXT_PUBLIC_CLIPPER_QA_APP_NAME`, `NEXT_PUBLIC_CLIPPER_QA_APP_VERSION` | Имя и версия приложения в экспорте. В Next в корневом **`next.config.ts`** они подставляются из **`package.json`**, если не заданы в `.env`.                                                                                                                                                             |
-| `NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH`                                     | Ветка в экспорте. В `next.config.ts`: если переменная не задана, используются `VERCEL_GIT_COMMIT_REF`, `GITHUB_HEAD_REF` или результат `git rev-parse --abbrev-ref HEAD` (без падения, если git недоступен).                                                                                             |
+Пары **Next** / **Vite**: в коде и в `buildClipperExportMeta` используется приоритет `NEXT_PUBLIC_*`, затем `VITE_*` (см. `clipperQaEnv.ts`). Для Babel в Node доступен только `process.env`, поэтому для трансформации задайте **`NEXT_PUBLIC_`** или **`VITE_`** в окружении процесса перед `vite build` / `next build`.
+
+| Next (приоритет) | Vite (`import.meta.env`) | Назначение |
+| ---------------- | ------------------------ | ---------- |
+| `NEXT_PUBLIC_CLIPPER_QA_ENABLED` | `VITE_CLIPPER_QA_ENABLED` | **`"true"`** — Babel + виджет. |
+| `NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE` | `VITE_CLIPPER_QA_ACTION_MODE` | `default` или **`copyInfo`** (регистр не важен): режим нижних кнопок. |
+| `NEXT_PUBLIC_CLIPPER_QA_STAND_URL` | `VITE_CLIPPER_QA_STAND_URL` | URL стенда в экспорте; иначе `window.location.origin`. |
+| `NEXT_PUBLIC_CLIPPER_QA_APP_NAME` | `VITE_CLIPPER_QA_APP_NAME` | Имя приложения в экспорте. |
+| `NEXT_PUBLIC_CLIPPER_QA_APP_VERSION` | `VITE_CLIPPER_QA_APP_VERSION` | Версия в экспорте. |
+| `NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH` | `VITE_CLIPPER_QA_GIT_BRANCH` | Ветка в экспорте. |
+
+В корневом **`next.config.ts`** для Next при сборке в `env` подставляются имя/версия из `package.json` и ветка (git / CI), если не заданы ни `NEXT_PUBLIC_*`, ни `VITE_*` для этих полей.
 
 Пример `.env.local`:
 
@@ -41,7 +47,7 @@ NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE=default
 # NEXT_PUBLIC_CLIPPER_QA_GIT_BRANCH=feature/qa-widget
 ```
 
-Для **dev/build** переменные должны быть заданы в окружении процесса (`next dev` / `next build`), иначе Babel не увидит флаг — атрибуты не появятся.
+Для **dev/build** флаг включения должен быть в **`process.env`** на момент запуска Babel (`next dev` / `next build` или `vite build`), иначе атрибуты не появятся. В Vite для клиента удобнее `.env` с префиксом **`VITE_`**; тогда для Babel в том же процессе задайте `VITE_CLIPPER_QA_ENABLED=true` или продублируйте `NEXT_PUBLIC_*`.
 
 ## Экспорт в Jira (режим `copyinfo`)
 
@@ -80,7 +86,7 @@ export default defineConfig({
 })
 ```
 
-Передавайте в окружение тот же `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true`, что ожидает плагин. Путь — через `path.resolve`, чтобы одинаково работало на Windows и Unix.
+Передавайте в окружение процесса **`NEXT_PUBLIC_CLIPPER_QA_ENABLED=true`** или **`VITE_CLIPPER_QA_ENABLED=true`**, чтобы Babel увидел флаг. Клиентский резолвер подхватит оба варианта. Путь к плагину — через `path.resolve`, чтобы одинаково работало на Windows и Unix.
 
 ## Зависимости для отдельной проверки Babel
 
@@ -99,5 +105,5 @@ npm install --save-dev @babel/core
 ## Интеграция в приложение
 
 - Импорт из `plugins/clipper-qa/ClipperQA` (или обёртка в `src/components/clipper-qa/ClipperQA.tsx` с реэкспортом — удобно для алиасов `@/`).
-- В **корневом layout** условный рендер по `NEXT_PUBLIC_CLIPPER_QA_ENABLED`, совпадающий с Babel.
+- В **корневом layout** условный рендер через **`clipperQaIsEnabled()`**, совпадающий с Babel.
 - Для имени, версии и ветки в экспорте при Next — см. **`next.config.ts`** в корне репозитория (`env` + чтение `package.json` / git / CI).
