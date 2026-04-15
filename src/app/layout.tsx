@@ -4,6 +4,9 @@ import { ClipperQA } from "@/../plugins/clipper-qa/ClipperQA";
 import { Navbar } from "@/components/ui/Navbar";
 import "./globals.css";
 
+const clipperQaEnabled =
+  process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED === "true";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -41,7 +44,7 @@ const RootLayout = ({
       <body className="flex min-h-full flex-col font-sans">
         <Navbar brand="SiteName" links={[...navLinks]} />
         <div className="flex flex-1 flex-col">{children}</div>
-        <ClipperQA />
+        {clipperQaEnabled ? <ClipperQA /> : null}
       </body>
     </html>
   );

@@ -1,16 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  Bug,
-  ChevronDown,
-  ClipboardList,
-  ScanSearch,
-  Send,
-  ThumbsUp,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { Bug, ClipboardList, Copy, ScanSearch, Send, ThumbsUp, Trash2, X } from 'lucide-react'
+
+import { buildClipperExportMeta, formatBugsForJira } from './formatBugsForJira'
+import type { ClippedBug, ClipperQaActionMode } from './types'
+
+export type { ClippedBug, ClipperQaActionMode } from './types'
 
 const STORAGE_EXPANDED = 'clipper-qa-expanded'
 const STORAGE_BUGS = 'clipper-qa-bugs'
@@ -21,13 +17,35 @@ const OUTLINE = '2px solid #6366f1'
 const OUTLINE_CAPTURE = '2px solid #ef4444'
 const OUTLINE_OFFSET = '0px'
 
-export interface ClippedBug {
-  id: string
-  file: string
-  component: string
-  classes: string
-  description: string
-  breakpoint: 'Mobile' | 'Desktop'
+function getClipperQaActionMode(): ClipperQaActionMode {
+  const v = (process.env.NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE ?? '').trim().toLowerCase()
+  if (v === 'copyinfo') return 'copyinfo'
+  return 'default'
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    /* fallback */
+  }
+  try {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.position = 'fixed'
+    ta.style.left = '-9999px'
+    document.body.appendChild(ta)
+    ta.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(ta)
+    return ok
+  } catch {
+    return false
+  }
 }
 
 const getBreakpoint = (): 'Mobile' | 'Desktop' =>
@@ -163,6 +181,9 @@ export const ClipperQA = () => {
   const [storageReady, setStorageReady] = useState(false)
   /** Persisted for future WELL DONE behavior; hydrate + effect keep STORAGE_WELL_DONE in sync */
   const [wellDoneAck, setWellDoneAck] = useState(false)
+  const [copyHint, setCopyHint] = useState<string | null>(null)
+
+  const actionMode = getClipperQaActionMode()
 
   const clearHoverOutline = useCallback(() => {
     const prev = hoverRef.current
@@ -411,6 +432,13 @@ export const ClipperQA = () => {
     console.log(JSON.stringify(payload, null, 2))
   }
 
+  const copyBugsForJira = useCallback(async () => {
+    const text = formatBugsForJira(bugs, buildClipperExportMeta())
+    const ok = await copyTextToClipboard(text)
+    setCopyHint(ok ? 'Скопировано в буфер' : 'Не удалось скопировать')
+    window.setTimeout(() => setCopyHint(null), 2500)
+  }, [bugs])
+
   const widgetInteractive =
     '[&_button]:cursor-pointer [&_textarea]:cursor-pointer [&_input]:cursor-pointer [&_select]:cursor-pointer [&_summary]:cursor-pointer [&_[role=button]]:cursor-pointer [&_[role=tab]]:cursor-pointer [&_a]:cursor-pointer'
 
@@ -514,7 +542,24 @@ export const ClipperQA = () => {
           )}
         </div>
 
-        {bugs.length === 0 ? (
+        {copyHint ? (
+          <p className="text-center text-xs text-zinc-600" role="status" aria-live="polite">
+            {copyHint}
+          </p>
+        ) : null}
+
+        {actionMode === 'copyinfo' ? (
+          bugs.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => void copyBugsForJira()}
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            >
+              <Copy className="h-4 w-4 shrink-0" strokeWidth={2} />
+              Скопировать
+            </button>
+          ) : null
+        ) : bugs.length === 0 ? (
           <button
             type="button"
             data-acknowledged={wellDoneAck ? 'true' : 'false'}

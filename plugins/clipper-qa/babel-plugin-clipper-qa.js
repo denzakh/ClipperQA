@@ -1,16 +1,18 @@
 /**
- * ClipperQA Babel plugin — implementation (development only).
+ * ClipperQA Babel plugin — implementation when enabled via env.
  * - Injects `data-qa-file` / `data-qa-component` on JSX (except `ClipperQA.tsx` in this folder).
  * - Injects `import { ClipperQA }` + `<ClipperQA />` into recognized app entry files (`layout` / `App`).
  * Consumed via `index.js` (re-export) from `.babelrc` or Vite Babel config.
+ *
+ * Enable with `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` (same flag as runtime / layout).
  */
 const path = require("path");
 
 const CLIPPER_SOURCE_BASENAME = "ClipperQA";
 const CLIPPER_DIR_MARKER = "plugins/clipper-qa/";
 
-function isDevelopment() {
-  return process.env.NODE_ENV === "development";
+function isClipperQaEnabled() {
+  return process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED === "true";
 }
 
 function normalizeFile(filename) {
@@ -247,7 +249,7 @@ module.exports = function clipperQaBabelPlugin(babel) {
     name: "clipper-qa",
     visitor: {
       JSXOpeningElement(elementPath, state) {
-        if (!isDevelopment()) return;
+        if (!isClipperQaEnabled()) return;
         const filename = state.file.opts.filename || "";
         if (isClipperQaSourceFile(filename)) return;
 
@@ -286,7 +288,7 @@ module.exports = function clipperQaBabelPlugin(babel) {
        */
       Program: {
         enter(programPath, state) {
-          if (!isDevelopment()) return;
+          if (!isClipperQaEnabled()) return;
           const filename = state.file.opts.filename || "";
           if (!isEntryFile(filename)) return;
           injectEntry(programPath, state, t);
