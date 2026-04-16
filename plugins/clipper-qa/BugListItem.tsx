@@ -21,18 +21,34 @@ export const BugListItem = ({
   const [fadeIn, setFadeIn] = useState(!animateEnter)
 
   useEffect(() => {
-    if (!animateEnter) {
-      setFadeIn(true)
-      return
-    }
-    setFadeIn(false)
+    let cancelled = false
+    let outer = 0
     let inner = 0
-    const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => setFadeIn(true))
+
+    if (!animateEnter) {
+      queueMicrotask(() => {
+        if (!cancelled) setFadeIn(true)
+      })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    queueMicrotask(() => {
+      if (cancelled) return
+      setFadeIn(false)
+      outer = window.requestAnimationFrame(() => {
+        if (cancelled) return
+        inner = window.requestAnimationFrame(() => {
+          if (!cancelled) setFadeIn(true)
+        })
+      })
     })
+
     return () => {
-      cancelAnimationFrame(outer)
-      cancelAnimationFrame(inner)
+      cancelled = true
+      window.cancelAnimationFrame(outer)
+      window.cancelAnimationFrame(inner)
     }
   }, [animateEnter, b.id])
 

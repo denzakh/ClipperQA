@@ -13,35 +13,42 @@ export function useClipperQaStorage() {
   const [wellDoneAck, setWellDoneAck] = useState(false)
 
   useEffect(() => {
-    try {
-      const exp = localStorage.getItem(STORAGE_EXPANDED)
-      if (exp !== null) setExpanded(exp === 'true')
-      const raw = localStorage.getItem(STORAGE_BUGS)
-      persistedBugIdsRef.current = new Set()
-      if (raw) {
-        const parsed = JSON.parse(raw) as unknown
-        if (Array.isArray(parsed)) {
-          const loaded = parsed.filter(
-            (b): b is ClippedBug =>
-              typeof b === 'object' &&
-              b !== null &&
-              'id' in b &&
-              'file' in b &&
-              'component' in b &&
-              'classes' in b &&
-              'description' in b &&
-              'breakpoint' in b
-          )
-          persistedBugIdsRef.current = new Set(loaded.map((b) => b.id))
-          setBugs(loaded)
+    let cancelled = false
+    queueMicrotask(() => {
+      if (cancelled) return
+      try {
+        const exp = localStorage.getItem(STORAGE_EXPANDED)
+        if (exp !== null) setExpanded(exp === 'true')
+        const raw = localStorage.getItem(STORAGE_BUGS)
+        persistedBugIdsRef.current = new Set()
+        if (raw) {
+          const parsed = JSON.parse(raw) as unknown
+          if (Array.isArray(parsed)) {
+            const loaded = parsed.filter(
+              (b): b is ClippedBug =>
+                typeof b === 'object' &&
+                b !== null &&
+                'id' in b &&
+                'file' in b &&
+                'component' in b &&
+                'classes' in b &&
+                'description' in b &&
+                'breakpoint' in b
+            )
+            persistedBugIdsRef.current = new Set(loaded.map((b) => b.id))
+            setBugs(loaded)
+          }
         }
+        const wd = localStorage.getItem(STORAGE_WELL_DONE)
+        setWellDoneAck(wd === 'true')
+      } catch {
+        /* ignore corrupt storage */
       }
-      const wd = localStorage.getItem(STORAGE_WELL_DONE)
-      setWellDoneAck(wd === 'true')
-    } catch {
-      /* ignore corrupt storage */
+      setStorageReady(true)
+    })
+    return () => {
+      cancelled = true
     }
-    setStorageReady(true)
   }, [])
 
   useEffect(() => {

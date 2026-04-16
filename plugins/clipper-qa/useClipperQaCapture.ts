@@ -88,5 +88,12 @@ export function useClipperQaCapture({
       suppressHoverOutlineRef.current = false
       restoreBodyCursor()
     }
-  }, [inspectMode, addBugFromElement, clearHoverOutline])
+  }, [
+    inspectMode,
+    addBugFromElement,
+    clearHoverOutline,
+    pendingCaptureTargetRef,
+    rootRef,
+    suppressHoverOutlineRef,
+  ])
 }

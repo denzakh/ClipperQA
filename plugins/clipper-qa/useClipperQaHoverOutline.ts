@@ -95,5 +95,5 @@ export function useClipperQaHoverOutline({
       clearHoverOutline()
       restoreBodyCursor()
     }
-  }, [clearHoverOutline])
+  }, [clearHoverOutline, hoverRef, inspectModeRef, rootRef, suppressHoverOutlineRef])
 }
