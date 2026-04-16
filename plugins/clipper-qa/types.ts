@@ -7,5 +7,5 @@ export interface ClippedBug {
   breakpoint: 'Mobile' | 'Desktop'
 }
 
-/** Режим нижних кнопок; значения можно расширять. */
+/** Footer button mode; extend with more values as needed. */
 export type ClipperQaActionMode = 'default' | 'copyinfo'

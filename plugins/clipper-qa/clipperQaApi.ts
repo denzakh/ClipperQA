@@ -16,7 +16,7 @@ function bugsPayload(bugs: ClippedBug[]) {
 export async function postBugsToAi(bugs: ClippedBug[]): Promise<void> {
   const url = clipperQaSendToAiUrl()?.trim()
   if (!url) {
-    throw new Error('URL отправки в ИИ не задан (NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL)')
+    throw new Error('Send-to-AI URL is not set (NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL)')
   }
   const context = buildClipperExportMeta()
   const res = await fetch(url, {
@@ -32,7 +32,7 @@ export async function postBugsToAi(bugs: ClippedBug[]): Promise<void> {
 export async function postWellDoneCommand(): Promise<void> {
   const url = clipperQaWellDoneUrl()?.trim()
   if (!url) {
-    throw new Error('URL для WELL DONE не задан (NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL)')
+    throw new Error('WELL DONE URL is not set (NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL)')
   }
   const context = buildClipperExportMeta()
   const res = await fetch(url, {

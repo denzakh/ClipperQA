@@ -1,5 +1,5 @@
 /**
- * ClipperQA — точка входа для Babel (`.babelrc`, Vite `babel.plugins`).
- * Реэкспорт реализации из `babel-plugin-clipper-qa.js`.
+ * ClipperQA — Babel entry (`.babelrc`, Vite `babel.plugins`).
+ * Re-exports the implementation from `babel-plugin-clipper-qa.js`.
  */
 module.exports = require("./babel-plugin-clipper-qa.js");

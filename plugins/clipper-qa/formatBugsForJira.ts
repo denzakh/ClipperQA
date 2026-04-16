@@ -6,7 +6,7 @@ import {
 } from './clipperQaEnv'
 import type { ClippedBug } from './types'
 
-/** Метаданные для префикса экспорта (стенд, сборка, ветка). */
+/** Metadata for the export prefix (stand URL, build, branch). */
 export interface JiraExportMeta {
   standUrl: string
   appName: string
@@ -20,8 +20,8 @@ function displayOrDash(v: string | undefined): string {
 }
 
 /**
- * Собирает meta из `process.env` и при необходимости `window` (URL стенда).
- * Вызывайте в браузере (например по клику «Скопировать»), чтобы `origin` был корректен.
+ * Builds meta from `process.env` and optionally `window` (stand URL).
+ * Call in the browser (e.g. on Copy click) so `origin` is correct.
  */
 export function buildClipperExportMeta(): JiraExportMeta {
   let standUrl = clipperQaStandUrlEnv() ?? ''
@@ -47,19 +47,19 @@ function codeBlock(label: string, body: string): string {
 }
 
 /**
- * Текст в Markdown для вставки в описание задачи Jira (новый редактор).
+ * Markdown text for pasting into a Jira issue description (new editor).
  */
 export function formatBugsForJira(bugs: ClippedBug[], meta: JiraExportMeta): string {
   const lines: string[] = [
-    '## Контекст',
+    '## Context',
     '',
-    `- **Тестовый стенд:** ${meta.standUrl}`,
-    `- **Проект (package):** ${meta.appName} @ ${meta.appVersion}`,
-    `- **Ветка:** ${meta.gitBranch}`,
+    `- **Test stand:** ${meta.standUrl}`,
+    `- **Project (package):** ${meta.appName} @ ${meta.appVersion}`,
+    `- **Branch:** ${meta.gitBranch}`,
     '',
     '---',
     '',
-    `## Баги (${bugs.length})`,
+    `## Bugs (${bugs.length})`,
     '',
   ]
 
@@ -67,12 +67,12 @@ export function formatBugsForJira(bugs: ClippedBug[], meta: JiraExportMeta): str
     const n = i + 1
     lines.push(`### ${n}. ${displayOrDash(b.component)}`)
     lines.push('')
-    lines.push(`- **Файл:** \`${b.file || '—'}\``)
+    lines.push(`- **File:** \`${b.file || '—'}\``)
     lines.push(`- **Breakpoint:** ${b.breakpoint}`)
     lines.push('')
-    lines.push(codeBlock('Классы DOM', b.classes))
+    lines.push(codeBlock('DOM classes', b.classes))
     lines.push('')
-    lines.push('**Описание:**')
+    lines.push('**Description:**')
     lines.push('')
     lines.push(b.description.trim() || '—')
     lines.push('')

@@ -1,7 +1,7 @@
-# Указываем корень конфигурации
+# Mark this file as the root EditorConfig
 root = true
 
-# Общие настройки для всех файлов
+# Defaults for all files
 [*]
 indent_style = space
 indent_size = 2
@@ -10,15 +10,15 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-# Специфические настройки для JSON файлов
+# JSON
 [*.json]
 indent_size = 2
 
-# Специфические настройки для Markdown файлов
+# Markdown
 [*.md]
 trim_trailing_whitespace = false
 indent_size = 2
 
-# Специфические настройки для YAML файлов
+# YAML
 [*.yaml]
 indent_size = 2

@@ -114,10 +114,10 @@ export const ClipperQA = () => {
     try {
       await postBugsToAi(bugs)
       setBugs([])
-      setDefaultApiHint('Данные отправлены в ИИ')
+      setDefaultApiHint('Data sent to AI')
       scheduleClearDefaultHint()
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Ошибка сети'
+      const msg = e instanceof Error ? e.message : 'Network error'
       setDefaultApiHint(msg)
       scheduleClearDefaultHint()
     } finally {
@@ -131,10 +131,10 @@ export const ClipperQA = () => {
     try {
       await postWellDoneCommand()
       setWellDoneAck(true)
-      setDefaultApiHint('Сервер принял команду')
+      setDefaultApiHint('Server accepted the command')
       scheduleClearDefaultHint()
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Ошибка сети'
+      const msg = e instanceof Error ? e.message : 'Network error'
       setDefaultApiHint(msg)
       scheduleClearDefaultHint()
     } finally {

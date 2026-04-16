@@ -1,9 +1,9 @@
 /**
- * Универсальное чтение публичных переменных: Next (`NEXT_PUBLIC_CLIPPER_QA_*`)
- * или Vite (`import.meta.env.VITE_CLIPPER_QA_*`).
+ * Unified reading of public env vars: Next (`NEXT_PUBLIC_CLIPPER_QA_*`)
+ * or Vite (`import.meta.env.VITE_CLIPPER_QA_*`).
  *
- * Для каждого ключа явно перечислены оба источника — так Next может инлайнить
- * `process.env.NEXT_PUBLIC_*` на этапе сборки.
+ * For each key both sources are listed explicitly so Next can inline
+ * `process.env.NEXT_PUBLIC_*` at build time.
  */
 
 type ImportMetaEnvLike = Record<string, string | boolean | undefined>
@@ -31,14 +31,14 @@ function firstNonEmpty(...candidates: (string | undefined)[]): string | undefine
   return undefined
 }
 
-/** Включён ли слой ClipperQA (Babel + виджет в типичной интеграции). */
+/** Whether the ClipperQA layer is enabled (Babel + widget in a typical setup). */
 export function clipperQaIsEnabled(): boolean {
   const next = trimOrEmpty(process.env.NEXT_PUBLIC_CLIPPER_QA_ENABLED).toLowerCase()
   const vite = trimOrEmpty(viteString('VITE_CLIPPER_QA_ENABLED')).toLowerCase()
   return next === 'true' || vite === 'true'
 }
 
-/** Сырое значение режима кнопок (`default`, `copyInfo`, …). */
+/** Raw footer action mode (`default`, `copyInfo`, …). */
 export function clipperQaActionModeRaw(): string {
   return firstNonEmpty(
     process.env.NEXT_PUBLIC_CLIPPER_QA_ACTION_MODE,
@@ -74,7 +74,7 @@ export function clipperQaGitBranchEnv(): string | undefined {
   )
 }
 
-/** POST endpoint для режима default: отправка багов + context в ИИ. */
+/** POST endpoint for default mode: bugs + context to AI. */
 export function clipperQaSendToAiUrl(): string | undefined {
   return firstNonEmpty(
     process.env.NEXT_PUBLIC_CLIPPER_QA_SEND_TO_AI_URL,
@@ -82,7 +82,7 @@ export function clipperQaSendToAiUrl(): string | undefined {
   )
 }
 
-/** POST endpoint для режима default: команда WELL DONE + context. */
+/** POST endpoint for default mode: WELL DONE command + context. */
 export function clipperQaWellDoneUrl(): string | undefined {
   return firstNonEmpty(
     process.env.NEXT_PUBLIC_CLIPPER_QA_WELL_DONE_URL,

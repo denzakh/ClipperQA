@@ -5,7 +5,7 @@
  * Consumed via `index.js` (re-export) from `.babelrc` or Vite Babel config.
  *
  * Enable with `NEXT_PUBLIC_CLIPPER_QA_ENABLED=true` or `VITE_CLIPPER_QA_ENABLED=true`
- * (тот же смысл, что в `clipperQaEnv.ts` / layout).
+ * (same meaning as in `clipperQaEnv.ts` / layout).
  */
 const path = require("path");
 
